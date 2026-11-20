@@ -32,7 +32,7 @@ def load_documents(folder: str | Path) -> dict[str, str]:
     """Load every supported file in *folder* (non-recursive).
 
     Returns a mapping of file name -> file contents. Files that cannot be
-    decoded as UTF-8 are skipped.
+    decoded as UTF-8, or cannot be read at all, are skipped.
     """
     folder = Path(folder)
     documents: dict[str, str] = {}
@@ -43,7 +43,7 @@ def load_documents(folder: str | Path) -> dict[str, str]:
             continue
         try:
             text = path.read_text(encoding="utf-8")
-        except UnicodeDecodeError:
+        except (UnicodeDecodeError, OSError):
             continue
         if text.strip():
             documents[path.name] = text

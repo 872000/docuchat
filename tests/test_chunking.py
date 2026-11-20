@@ -72,6 +72,26 @@ class TestLoadAndChunkDocuments(unittest.TestCase):
     def test_load_documents_missing_folder_is_empty(self):
         self.assertEqual(load_documents("/definitely/not/a/folder"), {})
 
+    def test_load_documents_skips_unreadable_file(self):
+        import tempfile
+        from pathlib import Path
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            (folder / "good.md").write_text("Readable doc.")
+            (folder / "bad.md").write_text("Unreadable doc.")
+            real_read = Path.read_text
+
+            def flaky_read(self, *args, **kwargs):
+                if self.name == "bad.md":
+                    raise OSError("permission denied")
+                return real_read(self, *args, **kwargs)
+
+            with mock.patch.object(Path, "read_text", flaky_read):
+                docs = load_documents(folder)
+            self.assertEqual(docs, {"good.md": "Readable doc."})
+
 
 if __name__ == "__main__":
     unittest.main()
